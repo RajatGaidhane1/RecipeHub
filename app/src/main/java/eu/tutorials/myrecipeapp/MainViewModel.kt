@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
+
 class MainViewModel : ViewModel() {
 
     private val _categorieState = mutableStateOf(RecipeState())
@@ -16,21 +17,30 @@ class MainViewModel : ViewModel() {
         fetchCategories()
     }
 
-
-    private fun fetchCategories(){
+    private fun fetchCategories() {
         viewModelScope.launch {
             try {
                 val response = recipeService.getCategories()
-                _categorieState.value = _categorieState.value.copy(
-                    list = response.categories,
-                    loading = false,
-                    error = null
-                )
 
-            }catch (e: Exception){
+                if (response.isSuccessful) {
+                    val categories = response.body()?.categories ?: emptyList()
+
+                    _categorieState.value = _categorieState.value.copy(
+                        list = categories,
+                        loading = false,
+                        error = null
+                    )
+                } else {
+                    _categorieState.value = _categorieState.value.copy(
+                        loading = false,
+                        error = "API Error: ${response.code()}"
+                    )
+                }
+
+            } catch (e: Exception) {
                 _categorieState.value = _categorieState.value.copy(
                     loading = false,
-                    error = "Error fetching Categories ${e.message}"
+                    error = "Error fetching Categories: ${e.message}"
                 )
             }
         }
@@ -41,5 +51,5 @@ class MainViewModel : ViewModel() {
         val list: List<Category> = emptyList(),
         val error: String? = null
     )
-
 }
+
